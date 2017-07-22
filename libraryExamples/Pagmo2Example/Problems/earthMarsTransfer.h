@@ -29,7 +29,11 @@ using namespace pagmo;
 struct EarthMarsTransfer
 {
 
-    //EarthMarsTransfer( const std::vector< std::vector< double > > problemBounds );
+    EarthMarsTransfer( ){ }
+
+    EarthMarsTransfer( const std::vector< std::vector< double > > problemBounds );
+
+    ~EarthMarsTransfer( ){ }
 
     // Calculates the fitness
     vector_double fitness( const vector_double &x ) const;
@@ -38,13 +42,18 @@ struct EarthMarsTransfer
 
     std::string get_name( ) const;
 
+    template <typename Archive>
+    void serialize(Archive &ar)
+    {
+        ar(problemBounds_);
+    }
 private:
 
-//    const std::vector< std::vector< double > > problemBounds_;
+    std::vector< std::vector< double > > problemBounds_;
 
     StateType getPlanetPosition( const double date, const std::string planetName ) const;
 };
 
-//PAGMO_REGISTER_PROBLEM(EarthMarsTransfer)
+PAGMO_REGISTER_PROBLEM(EarthMarsTransfer)
 
 #endif // TUDAT_EXAMPLE_PAGMO_PROBLEM_EARTH_MARS_TRANSFER_H

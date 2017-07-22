@@ -41,8 +41,9 @@ int main( )
     bounds[ 0 ][ 1 ] = 200;
     bounds[ 1 ][ 1 ] = 1000;
 
+
     // Define the problem
-    problem prob{EarthMarsTransfer()};
+    problem prob{EarthMarsTransfer( bounds )};
 
     // Select the self-adaptive differential evolution algorithm.
     // One generation per evolution step.
@@ -50,10 +51,10 @@ int main( )
 
 
     // Create an archipelago with 1 island with 8 individuals
-    archipelago archi{1, algo, prob, 50};
+    archipelago archi{1, algo, prob, 8};
 
     // For 25 generation optimise the population in the island
-    for( int i=0 ; i < 500; i++ )
+    for( int i=0 ; i < 25; i++ )
     {
         archi.evolve();
         int c = archi[0].get_population().best_idx();
