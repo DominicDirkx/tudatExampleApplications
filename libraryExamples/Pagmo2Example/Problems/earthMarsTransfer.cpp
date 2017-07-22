@@ -50,6 +50,8 @@ vector_double EarthMarsTransfer::fitness( const vector_double &xv ) const{
 
     vector_double f;
 
+    f.resize( 1 );
+
     // Gravitational parameter of the Sun
     double mu = 1.32712440018e+20;
 
