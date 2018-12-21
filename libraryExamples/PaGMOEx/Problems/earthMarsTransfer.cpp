@@ -40,6 +40,7 @@ std::vector<double> EarthMarsTransfer::fitness( const std::vector<double> &xv ) 
     // departure and arrival respectively.
 
     StateType initialState = getPlanetPosition( xv[0], "Earth");
+    lastInitialState_ = initialState;
 
     StateType finalState   = getPlanetPosition( xv[0] + xv[1], "Mars" );
 

@@ -42,7 +42,9 @@ int main( )
     bounds[ 1 ][ 1 ] = 1000;
 
     // Create object to compute the problem fitness
-    problem prob{EarthMarsTransfer( bounds )};
+    EarthMarsTransfer earthMarsTransfer( bounds );
+
+    problem prob{earthMarsTransfer};
 
     // Perform grid saerch
     createGridSearch( prob, bounds, { 1000, 1000 }, "porkchopEarthMars" );
@@ -73,6 +75,14 @@ int main( )
             printPopulationToFile( isl.get_population( ).get_f( ), "earthMarsLambert_" + std::to_string( j ) + "_" + std::to_string( i ) , true );
 
             std::cout<<i<<" "<<algorithmIndex<<std::endl;
+        }
+
+        std::vector< std::vector< double > > finalPopulation = isl.get_population( ).get_x( );
+
+        for( int j = 0; j < finalPopulation.size( ); j++ )
+        {
+            earthMarsTransfer.fitness( finalPopulation.at( j ) );
+            std::cout<<earthMarsTransfer.getLastInitialState( ).transpose( )<<std::endl;
         }
     }
 

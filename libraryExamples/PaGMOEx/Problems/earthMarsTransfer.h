@@ -80,7 +80,15 @@ struct EarthMarsTransfer
         }
     }
 
+    StateType getLastInitialState( )
+    {
+        return lastInitialState_;
+    }
+
+
 private:
+
+    mutable StateType lastInitialState_;
 
     const std::vector< std::vector< double > > problemBounds_;
 
