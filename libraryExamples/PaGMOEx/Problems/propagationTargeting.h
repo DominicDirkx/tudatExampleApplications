@@ -46,6 +46,7 @@ private:
     double semiMajorAxis_;
     double simulationStartEpoch_;
     double simulationEndEpoch_;
+
     mutable tudat::simulation_setup::NamedBodyMap bodyMap_;
 
 

@@ -1,6 +1,6 @@
 %
 % This script processes the results of the multiple swingby interplanetary
-% transfer optimization run by the multiObjectiveEarthMarsTransferExample.cpp 
+% transfer optimization run by the multiObjectiveEarthMarsTransferExample.cpp
 % Tudat/Pagmo2 example.
 %
 
@@ -16,8 +16,8 @@ saveFolder = '../SimulationOutput/';
 
 % Define plot settings
 numberOfOptimizers = 1;
-numberOfGenerations = 32;
-plotInterval = 2;
+numberOfGenerations = 100;
+plotInterval = 98;
 
 % Create data storage containers
 fitness = cell(numberOfOptimizers,numberOfGenerations);
@@ -26,57 +26,64 @@ population = cell(numberOfOptimizers,numberOfGenerations);
 % Iterate over requested generations, and plot results
 counter = 1;
 i = 1;
+
+
+
 for j = 1:plotInterval:numberOfGenerations
     
     % Load data for current generation
-    fitness{i,j} =  load(strcat(saveFolder,'fitness_mo_mga_EVEEJ_',num2str(j),'.dat'));
-    population{i,j} =  load(strcat(saveFolder,'population_mo_mga_EVEEJ_',num2str(j),'.dat'));
+    fitness{i,counter} =  load(strcat(saveFolder,'fitness_mo_mga_EVEMJ_',num2str(j),'.dat'));
+    population{i,counter} =  load(strcat(saveFolder,'population_mo_mga_EVEMJ_',num2str(j),'.dat'));
     
     % Plot data, colored by departure date
     figure(1)
     subplot(4,4,counter)
-    scatter(fitness{i,j}(:,1),fitness{i,j}(:,2), 10,'*')    
+    scatter(fitness{i,counter}(:,1)/1000,fitness{i,counter}(:,2), 10,'*')
     if(rem(counter,4)==1)
         ylabel('Travel time [days]')
     end
     if(counter > 12 )
         xlabel('\Delta V [km/s]')
     end
-    title(strcat('Iteration ',{' '},num2str(j)));   
+    title(strcat('Iteration ',{' '},num2str(j)));
     grid on
     
     % Plot data, colored by leg duration (per leg)
-    for k=1:size(population{i,j},2)
+    for k=1:size(population{i,counter},2)
         figure(k+1)
         subplot(4,4,counter)
         if( k == 1 )
-            scatter(fitness{i,j}(:,1),fitness{i,j}(:,2), 10,(population{i,j}(:,k)-2451545)/365,'*')
+            scatter(fitness{i,counter}(:,1),fitness{i,counter}(:,2)/1000, 10,(population{i,counter}(:,k)-2451545)/365,'*')
         else
-            scatter(fitness{i,j}(:,1),fitness{i,j}(:,2), 10,population{i,j}(:,k),'*')
-        end        
+            scatter(fitness{i,counter}(:,1),fitness{i,counter}(:,2)/1000, 10,population{i,counter}(:,k),'*')
+        end
         if(rem(counter,4)==1)
             ylabel('Travel time [days]')
         end
         if(counter > 12 )
             xlabel('Delta V [km/s]')
-        end        
-        title(strcat('Gen.=',{' '},num2str(j)));        
+        end
+        title(strcat('Gen.=',{' '},num2str(j)));
         colorbar
         grid on
     end
+    [Minimum,Index]=min(fitness{i,counter}(:,1))
+    bestPopulation = population{i,counter}(Index,:)
     counter = counter + 1;
-    grid on    
+    grid on
+    
+    
 end
 
 % Resize figure windows
-for k=1:size(population{1,1},2)+1    
+for k=1:size(population{1,1},2)+1
     set(figure(k), 'Units', 'normalized', 'Position', [0,0,0.75 0.75]);
     set(figure(k),'PaperUnits','centimeters','PaperPosition',[0 0 45 30]);
     set(figure(k),'PaperPositionMode','auto');
 end
 
 % Add figure titles
-for k=1:size(population{i,j},2)
+for k=1:size(population{i,counter},2)
     figure(k+1)
     if( k== 1)
         suptitle('Color scale: departure date [years since J2000]')

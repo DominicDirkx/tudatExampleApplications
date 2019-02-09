@@ -12,7 +12,7 @@
 
 EarthMarsTransfer::EarthMarsTransfer( std::vector< std::vector< double > > &bounds,
                                       const bool useTripTime ) :
-    problemBounds_( bounds ), useTripTime_( useTripTime ) { }
+    problemBounds_( bounds ), useTripTime_( useTripTime ) {  std::cout<<"Creating new problem A"<<std::endl; }
 
 
 //! Descriptive name of the problem
@@ -66,6 +66,10 @@ std::vector<double> EarthMarsTransfer::fitness( const std::vector<double> &xv ) 
     {
         f.push_back( xv[1] );
     }
+
+    initialStateHistory_[ xv ] = initialState;
+
+//    std::cout<<getStateHistorySize( )<<std::endl;
     return f;
 }
 

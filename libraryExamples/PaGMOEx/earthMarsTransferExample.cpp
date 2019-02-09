@@ -42,23 +42,23 @@ int main( )
     bounds[ 1 ][ 1 ] = 1000;
 
     // Create object to compute the problem fitness
-    problem prob{EarthMarsTransfer( bounds )};
+    problem prob{ EarthMarsTransfer( bounds ) };
 
     // Perform grid saerch
-    createGridSearch( prob, bounds, { 1000, 1000 }, "porkchopEarthMars" );
+    //createGridSearch( prob, bounds, { 1000, 1000 }, "porkchopEarthMars" );
 
     // Perform optimization with 8 different optimizers
-    for( int j = 0; j < 8; j++ )
+    for( int j = 0; j < 1; j++ )
     {
         // Retrieve algorothm
         int algorithmIndex = j;
         algorithm algo{getAlgorithm( algorithmIndex )};
 
         // Create an island with 1024 individuals
-        island isl{algo, prob, 1024};
+        island isl{algo, prob, 10};
 
         // Evolve for 100 generations
-        for( int i = 0 ; i < 100; i++ )
+        for( int i = 0 ; i < 1; i++ )
         {
             isl.evolve( );
             while( isl.status( ) != pagmo::evolve_status::idle &&
@@ -68,12 +68,32 @@ int main( )
             }
             isl.wait_check( ); // Raises errors
 
+            std::vector<vector_double> finalDecisionVariables = isl.get_population( ).get_x( );
+            EarthMarsTransfer* udp = isl.get_population( ).get_problem( ).extract< EarthMarsTransfer >( );
+
+            std::map< std::vector< double >,  Eigen::Vector6d > stateHistory = udp->getInitialStateHistory( );
+
+            for( unsigned int i = 0; i < finalDecisionVariables.size( ); i++ )
+            {
+//                std::cout<<( udp == nullptr )<<" "<<udp->getStateHistorySize( )<<std::endl;
+                std::cout<<"From final population: "<<finalDecisionVariables.at( i )[ 0 ]<<" "<<finalDecisionVariables.at( i )[ 1 ]<<std::endl;
+                std::cout<<udp->getPastInitialStates( finalDecisionVariables.at( i ) ).transpose( )<<std::endl;
+            }
+
+            for( auto it = stateHistory.begin( ); it != stateHistory.end( ); it++ )
+            {
+                std::cout<<"From object: "<<it->first[ 0 ]<<" "<<it->first[ 1 ]<<std::endl;
+                std::cout<<it->second.transpose( )<<std::endl;
+
+            }
+
             // Write current iteration results to file
             printPopulationToFile( isl.get_population( ).get_x( ), "earthMarsLambert_" + std::to_string( j ) + "_" + std::to_string( i ) , false );
             printPopulationToFile( isl.get_population( ).get_f( ), "earthMarsLambert_" + std::to_string( j ) + "_" + std::to_string( i ) , true );
 
-            std::cout<<i<<" "<<algorithmIndex<<std::endl;
         }
+
+
     }
 
     return 0;

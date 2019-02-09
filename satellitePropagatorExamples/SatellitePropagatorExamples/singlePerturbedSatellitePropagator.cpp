@@ -46,6 +46,7 @@ int main( )
     bodiesToCreate.push_back( "Moon" );
     bodiesToCreate.push_back( "Mars" );
     bodiesToCreate.push_back( "Venus" );
+    bodiesToCreate.push_back( "Jupiter" );
 
     // Create body objects.
     std::map< std::string, std::shared_ptr< BodySettings > > bodySettings =

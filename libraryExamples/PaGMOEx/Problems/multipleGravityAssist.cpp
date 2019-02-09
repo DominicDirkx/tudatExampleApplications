@@ -8,6 +8,8 @@
  *    http://tudat.tudelft.nl/LICENSE.
  */
 
+#include "Tudat/SimulationSetup/PropagationSetup/propagationPatchedConicFullProblem.h"
+
 #include "multipleGravityAssist.h"
 
 using namespace tudat::ephemerides;
@@ -15,7 +17,9 @@ using namespace tudat::basic_astrodynamics;
 using namespace tudat::orbital_element_conversions;
 using namespace tudat::basic_mathematics;
 using namespace tudat::input_output;
-using namespace tudat::transfer_trajectories; //NEED TO CHANGE THIS TO: transfer_trajectories
+using namespace tudat::simulation_setup;
+using namespace tudat::propagators;
+using namespace tudat::transfer_trajectories;
 using namespace tudat;
 using namespace pagmo;
 
@@ -24,6 +28,7 @@ MultipleGravityAssist::MultipleGravityAssist(std::vector< std::vector< double > 
                                              const bool useTripTime ):
     problemBounds_( bounds ), useTripTime_( useTripTime )
 {
+    tudat::spice_interface::loadStandardSpiceKernels( );
 
     // Specify required parameters
     // Specify the number of legs and type of legs.
@@ -40,62 +45,46 @@ MultipleGravityAssist::MultipleGravityAssist(std::vector< std::vector< double > 
     ephemerisVector_.resize( numberOfLegs_ );
     gravitationalParameterVector_.resize( numberOfLegs_ );
     minimumPericenterRadii_.resize( numberOfLegs_ );
+
+    bodyNames.resize( numberOfLegs_ );
     for(int i = 0; i < numberOfLegs_; i++)
     {
         switch(flybySequence[ i ])
         {
         case( 1 ):
-            ephemerisVector_[ i ] = std::make_shared< ephemerides::ApproximatePlanetPositions >
-                    ( ephemerides::ApproximatePlanetPositionsBase::BodiesWithEphemerisData::mercury );
-            gravitationalParameterVector_[ i ] = 2.2032E13;
+            bodyNames[ i ] = "Mercury";
             minimumPericenterRadii_[ i ] = 2639.7E3;
             break;
         case( 2 ):
-            ephemerisVector_[ i ] = std::make_shared< ephemerides::ApproximatePlanetPositions >
-                    ( ephemerides::ApproximatePlanetPositionsBase::BodiesWithEphemerisData::venus );
-            gravitationalParameterVector_[ i ] = 3.24859E14;
+            bodyNames[ i ] = "Venus";
             minimumPericenterRadii_[ i ] = 6251.8E3;
             break;
         case( 3 ):
-            ephemerisVector_[ i ] = std::make_shared< ephemerides::ApproximatePlanetPositions >
-                    ( ephemerides::ApproximatePlanetPositionsBase::BodiesWithEphemerisData::earthMoonBarycenter );
-            gravitationalParameterVector_[ i ] = 3.986004418E14;
+            bodyNames[ i ] = "Earth";
             minimumPericenterRadii_[ i ] = 6578.1E3;
             break;
         case( 4 ):
-            ephemerisVector_[ i ] = std::make_shared< ephemerides::ApproximatePlanetPositions >
-                    ( ephemerides::ApproximatePlanetPositionsBase::BodiesWithEphemerisData::mars );
-            gravitationalParameterVector_[ i ] = 4.282837E13;
+            bodyNames[ i ] = "Mars";
             minimumPericenterRadii_[ i ] = 3596.2E3;
             break;
         case( 5 ):
-            ephemerisVector_[ i ] = std::make_shared< ephemerides::ApproximatePlanetPositions >
-                    ( ephemerides::ApproximatePlanetPositionsBase::BodiesWithEphemerisData::jupiter );
-            gravitationalParameterVector_[ i ] = 1.26686534E17;
+            bodyNames[ i ] = "Jupiter";
             minimumPericenterRadii_[ i ] = 72000.0E3;
             break;
         case( 6 ):
-            ephemerisVector_[ i ] = std::make_shared< ephemerides::ApproximatePlanetPositions >
-                    ( ephemerides::ApproximatePlanetPositionsBase::BodiesWithEphemerisData::saturn );
-            gravitationalParameterVector_[ i ] = 3.7931187E16;
+            bodyNames[ i ] = "Saturn";
             minimumPericenterRadii_[ i ] = 61000.0E3;
             break;
         case( 7 ):
-            ephemerisVector_[ i ] = std::make_shared< ephemerides::ApproximatePlanetPositions >
-                    ( ephemerides::ApproximatePlanetPositionsBase::BodiesWithEphemerisData::uranus );
-            gravitationalParameterVector_[ i ] = 5.793939E15;
+            bodyNames[ i ] = "Uranus";
             minimumPericenterRadii_[ i ] = 26000.0E3;
             break;
         case( 8 ):
-            ephemerisVector_[ i ] = std::make_shared< ephemerides::ApproximatePlanetPositions >
-                    ( ephemerides::ApproximatePlanetPositionsBase::BodiesWithEphemerisData::neptune );
-            gravitationalParameterVector_[ i ] = 6.836529E15;
+            bodyNames[ i ] = "Neptune";
             minimumPericenterRadii_[ i ] = 25000.0E3;
             break;
         case( 9 ):
-            ephemerisVector_[ i ] = std::make_shared< ephemerides::ApproximatePlanetPositions >
-                    ( ephemerides::ApproximatePlanetPositionsBase::BodiesWithEphemerisData::pluto );
-            gravitationalParameterVector_[ i ] = 8.71E11;
+            bodyNames[ i ] = "Pluto";
             minimumPericenterRadii_[ i ] = 1395.0E3;
             break;
         default:
@@ -103,6 +92,14 @@ MultipleGravityAssist::MultipleGravityAssist(std::vector< std::vector< double > 
         }
     }
 
+    bodyMap = propagators::setupBodyMapFromEphemeridesForPatchedConicsTrajectory(
+                "Sun", "Vehicle", bodyNames );
+
+    for(int i = 0; i < numberOfLegs_; i++)
+    {
+        ephemerisVector_[ i ] = bodyMap.at( bodyNames.at( i ) )->getEphemeris( );
+        gravitationalParameterVector_[ i ] = bodyMap.at( bodyNames.at( i ) )->getGravityFieldModel( )->getGravitationalParameter( );
+    }
     // Create departure and capture variables.
     semiMajorAxes_.resize( 2 );
     eccentricities_.resize( 2 );
@@ -139,10 +136,16 @@ std::vector<double> MultipleGravityAssist::fitness( const std::vector<double> &x
     variableVector[ numberOfLegs_ ] = 1;//dummy
     variableVector *= physical_constants::JULIAN_DAY;
 
-    // Create the trajectory problem.
-    Trajectory mgaTraj( numberOfLegs_, legTypeVector_, ephemerisVector_,
-                          gravitationalParameterVector_, variableVector, sunGravitationalParameter,
-                          minimumPericenterRadii_, semiMajorAxes_, eccentricities_ );
+     //Create the trajectory problem.
+//        Trajectory mgaTraj( numberOfLegs_, legTypeVector_, ephemerisVector_,
+//                              gravitationalParameterVector_, variableVector, sunGravitationalParameter,
+//                              minimumPericenterRadii_, semiMajorAxes_, eccentricities_, false );
+    Trajectory mgaTraj = createTransferTrajectoryObject(
+                bodyMap, bodyNames, "Sun", legTypeVector_,
+                utilities::convertEigenVectorToStlVector( variableVector ),
+                utilities::convertEigenVectorToStlVector( minimumPericenterRadii_ ),
+                false, TUDAT_NAN, TUDAT_NAN, true,
+                1.0895e8 / 0.02, 0.98 );
 
     // Start the deltaV vector.
     double resultingDeltaV;

@@ -20,6 +20,7 @@
 #include <Tudat/Astrodynamics/BasicAstrodynamics/orbitalElementConversions.h>
 #include <Tudat/Astrodynamics/BasicAstrodynamics/convertMeanToEccentricAnomalies.h>
 #include <Tudat/Astrodynamics/MissionSegments/multiRevolutionLambertTargeterIzzo.h>
+#include <Tudat/Basics/basicTypedefs.h>
 
 #include "pagmo/island.hpp"
 #include "pagmo/io.hpp"
@@ -45,7 +46,30 @@ struct EarthMarsTransfer
     typedef Eigen::Matrix< double, 6, 1 > StateType;
 
     //! Default constructor, required for Pagmo compatibility
-    EarthMarsTransfer( ): useTripTime_( false ){ }
+    EarthMarsTransfer( ): useTripTime_( false ){ std::cout<<"Creating new problem"<<std::endl; }
+
+    EarthMarsTransfer( const EarthMarsTransfer& emt ):problemBounds_( emt.getProblemBounds( ) ),
+        useTripTime_( emt.getUseTripTime( ) ), initialStateHistory_( emt.getInitialStateHistory( ) )
+    {
+        std::cout<<"Copy Const. "<<initialStateHistory_.size( )<<std::endl;
+        for( auto it = initialStateHistory_.begin( ); it != initialStateHistory_.end( ); it++ )
+        {
+            std::cout<<it->first[ 0 ]<<" "<<it->first[ 1 ]<<std::endl;
+        }
+        std::cout<<std::endl<<std::endl;
+    }
+
+    EarthMarsTransfer( const EarthMarsTransfer&& emt ):problemBounds_( emt.getProblemBounds( ) ),
+        useTripTime_( emt.getUseTripTime( ) ), initialStateHistory_( emt.getInitialStateHistory( ) )
+    {
+        std::cout<<"Move Const."<<initialStateHistory_.size( )<<std::endl;
+        std::cout<<"Copy Const. "<<initialStateHistory_.size( )<<std::endl;
+        for( auto it = initialStateHistory_.begin( ); it != initialStateHistory_.end( ); it++ )
+        {
+            std::cout<<it->first[ 0 ]<<" "<<it->first[ 1 ]<<std::endl;
+        }
+        std::cout<<std::endl<<std::endl;
+    }
 
     //! Constructor that sets boundaries of independent variables, and a boolean denoting whether the fitness is single-objective
     //! (Delta V), or dual objective (Delta V and time of flight).
@@ -80,6 +104,38 @@ struct EarthMarsTransfer
         }
     }
 
+    Eigen::Vector6d getPastInitialStates( const std::vector< double >& xv )
+    {
+        if( initialStateHistory_.count( xv ) != 0 )
+        {
+            return initialStateHistory_.at( xv );
+        }
+        else
+        {
+            return  Eigen::Vector6d::Constant( TUDAT_NAN );
+        }
+    }
+
+    int getStateHistorySize( ) const
+    {
+        return initialStateHistory_.size( );
+    }
+
+    std::vector< std::vector< double > > getProblemBounds( ) const
+    {
+        return problemBounds_;
+    }
+
+    bool getUseTripTime( ) const
+    {
+        return useTripTime_;
+    }
+
+    std::map< std::vector< double >,  Eigen::Vector6d > getInitialStateHistory( ) const
+    {
+        return initialStateHistory_;
+    }
+
 private:
 
     const std::vector< std::vector< double > > problemBounds_;
@@ -87,6 +143,8 @@ private:
     StateType getPlanetPosition( const double date, const std::string planetName ) const;
 
     bool useTripTime_;
+
+    mutable std::map< std::vector< double >,  Eigen::Vector6d > initialStateHistory_;
 };
 
 #endif // TUDAT_EXAMPLE_PAGMO_PROBLEM_EARTH_MARS_TRANSFER_H

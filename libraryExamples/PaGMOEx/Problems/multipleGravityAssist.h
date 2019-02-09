@@ -24,6 +24,7 @@
 #include <Tudat/Mathematics/BasicMathematics/mathematicalConstants.h>
 #include "Tudat/Astrodynamics/BasicAstrodynamics/unitConversions.h"
 #include <Tudat/Astrodynamics/BasicAstrodynamics/orbitalElementConversions.h>
+#include "Tudat/SimulationSetup/tudatSimulationHeader.h"
 
 #include <Tudat/InputOutput/basicInputOutput.h>
 
@@ -91,15 +92,26 @@ private:
 
     const std::vector< std::vector< double > > problemBounds_;
 
+    simulation_setup::NamedBodyMap bodyMap;
+
+    std::vector< std::string > bodyNames;
+
     bool useTripTime_;
 
     int numberOfLegs_;
-    std::vector< int > legTypeVector_;
+
+    std::vector< TransferLegType > legTypeVector_;
+
     std::vector< std::string > bodyNamesVector_;
+
     std::vector< ephemerides::EphemerisPointer > ephemerisVector_;
+
     Eigen::VectorXd gravitationalParameterVector_;
+
     Eigen::VectorXd semiMajorAxes_;
+
     Eigen::VectorXd eccentricities_;
+
     Eigen::VectorXd minimumPericenterRadii_;
 };
 

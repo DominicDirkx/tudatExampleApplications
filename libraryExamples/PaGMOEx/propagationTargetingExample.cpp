@@ -35,7 +35,7 @@ using namespace tudat_pagmo_applications;
 
 int main( )
 {
-    bool performGridSearch = true;
+    bool performGridSearch = false;
 
     //Set seed for reproducible results
     pagmo::random_device::set_seed(255);
