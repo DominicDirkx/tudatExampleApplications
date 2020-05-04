@@ -14,6 +14,52 @@
 
 #include <SatellitePropagatorExamples/applicationOutput.h>
 
+namespace tudat
+{
+
+class EntryCapsuleAerodynamicGuidance: public aerodynamics::AerodynamicGuidance
+{
+public:
+
+    //! Constructor
+    EntryCapsuleAerodynamicGuidance( const simulation_setup::NamedBodyMap& bodyMap,
+                                     const std::string& guidedBody )
+    {
+        // Retrieve Apollo flight conditions, and store as member variable
+        vehicleFlightConditions_ =
+                std::dynamic_pointer_cast< aerodynamics::AtmosphericFlightConditions >(
+                    bodyMap.at( guidedBody )->getFlightConditions( ) );                                                                                             ////
+    }
+
+    void updateGuidance( const double time )
+    {
+        double machNumber = vehicleFlightConditions_->getCurrentMachNumber( );
+        if( machNumber > 12 )
+        {
+           currentAngleOfAttack_ = unit_conversions::convertDegreesToRadians( 15.0 );
+        }
+        else if( machNumber < 3.0 )
+        {
+            currentAngleOfAttack_ = 0.0;
+        }
+        else
+        {
+            currentAngleOfAttack_ = unit_conversions::convertDegreesToRadians( ( machNumber - 3.0 ) / 9.0  * 15.0 );
+        }
+        currentAngleOfSideslip_ = 0.0;      ////
+        currentBankAngle_ = 0.0;
+    }
+
+
+private:
+
+    std::shared_ptr< aerodynamics::AtmosphericFlightConditions > vehicleFlightConditions_;
+
+
+};
+
+}
+
 //! Execute propagation of orbits of Apollo during entry.
 int main( )
 {
@@ -105,9 +151,10 @@ int main( )
                 bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
 
     // Define constant 30 degree angle of attack
-    double constantAngleOfAttack = 30.0 * mathematical_constants::PI / 180.0;
-    bodyMap.at( "Apollo" )->getFlightConditions( )->getAerodynamicAngleCalculator( )->setOrientationAngleFunctions(
-                [=]( ){ return constantAngleOfAttack; } );
+
+    std::shared_ptr< EntryCapsuleAerodynamicGuidance > guidanceModel =
+            std::make_shared< EntryCapsuleAerodynamicGuidance >( bodyMap, "Apollo" );
+    setGuidanceAnglesFunctions( guidanceModel, bodyMap.at( "Apollo" ) );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             CREATE PROPAGATION SETTINGS            ////////////////////////////////////////////
@@ -140,6 +187,8 @@ int main( )
     std::vector< std::shared_ptr< SingleDependentVariableSaveSettings > > dependentVariablesList;
     dependentVariablesList.push_back( std::make_shared< SingleDependentVariableSaveSettings >(
                                           mach_number_dependent_variable, "Apollo" ) );
+    dependentVariablesList.push_back( std::make_shared< BodyAerodynamicAngleVariableSaveSettings >(
+                                          "Apollo", reference_frames::angle_of_attack ) );
     dependentVariablesList.push_back( std::make_shared< SingleDependentVariableSaveSettings >(
                                           altitude_dependent_variable, "Apollo", "Earth" ) );
     dependentVariablesList.push_back( std::make_shared< SingleAccelerationDependentVariableSaveSettings >(
